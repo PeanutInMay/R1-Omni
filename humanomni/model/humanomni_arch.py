@@ -26,9 +26,9 @@ from .encoder import build_vision_tower, build_audio_tower
 from ..constants import IGNORE_INDEX, NUM_FRAMES, MODAL_INDEX_MAP, IMAGE_TOKEN_PATCH, MODAL_INDEX_REMAP
 from humanomni.mm_utils import frame_sample
 from transformers import BertModel, BertTokenizer
-import h5py
+# import h5py
 import torch.distributed as dist
-import ipdb
+# import ipdb
 
 class SFDynamicCompressor(nn.Module):
     def __init__(self, model_args, vision_tower):
@@ -80,7 +80,7 @@ class HumanOmniMetaModel:
 
         # Comment out this part of the code during training to avoid repeated initialization.
         num_branches = 3
-        bert_model = "/mnt/data/jiaxing.zjx/code/R1-V-Qwen/R1-V/bert-base-uncased"
+        bert_model = "/home/sxjiang/model/bert-base-uncased"
         self.bert_model =  BertModel.from_pretrained(bert_model)
         self.bert_tokenizer = BertTokenizer.from_pretrained(bert_model)
         modules = [nn.Linear(self.bert_model.config.hidden_size, 3584)]

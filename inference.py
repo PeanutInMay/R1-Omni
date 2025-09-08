@@ -18,7 +18,7 @@ def main():
     args = parser.parse_args()
 
     # 初始化BERT分词器
-    bert_model = "bert-base-uncased"
+    bert_model = "/home/sxjiang/model/bert-base-uncased"
     bert_tokenizer = BertTokenizer.from_pretrained(bert_model)
 
     # 禁用Torch初始化
@@ -39,6 +39,7 @@ def main():
 
     # 执行推理
     output = mm_infer(video_tensor, args.instruct, model=model, tokenizer=tokenizer, modal=args.modal, question=args.instruct, bert_tokeni=bert_tokenizer, do_sample=False, audio=audio)
+    print("#"*50)
     print(output)
 
 if __name__ == "__main__":
