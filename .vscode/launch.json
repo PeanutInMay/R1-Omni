@@ -1,0 +1,32 @@
+{
+    // 使用 IntelliSense 了解相关属性。 
+    // 悬停以查看现有属性的描述。
+    // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+
+        {
+            "name": "Python Debugger: Python File",
+            "type": "debugpy",
+            "request": "launch",
+            "python": "/home/sxjiang/miniconda3/envs/r1-omni2/bin/python",
+            "program": "${file}",
+            "cwd": "${fileDirname}",
+            "console": "integratedTerminal",
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "0"
+            },
+            "justMyCode": false,
+            "args":[
+                "--model",
+                "video_audio",
+                "--model_path",
+                "/home/sxjiang/model/R1-Omni-0.5B",
+                "--video_path",
+                "/home/sxjiang/zhzhu/project/R1-Omni/test/video/video.mp4",
+                "--instruct",
+                "As an emotional recognition expert; throughout the video, which emotion conveyed by the characters is the most obvious to you?  Output the thinking process in <think> </think> and final emotion in <answer> </answer> tags."
+            ]
+        }
+    ]
+}

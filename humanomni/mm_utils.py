@@ -486,18 +486,22 @@ def process_video_qwen(video_path, processor, s=None, e=None, aspect_ratio='pad'
 
 
 
+import torch
+
 def process_audio(audio_path, processor=None, sample_rate=16000, duration=10, s=None, e=None, return_empty=False):
     if return_empty:
         num_samples = int(duration * sample_rate)
         audio_data = torch.zeros(num_samples, dtype=torch.float32)
         if processor is not None:
-            audio_data = processor(audio_data, sampling_rate=sample_rate, return_tensors='pt')['input_features']
+            # 将输入数据转换为半精度以匹配模型
+            audio_data = processor(audio_data.half(), sampling_rate=sample_rate, return_tensors='pt')['input_features']
             if torch.isnan(audio_data).any():
                 audio_data = torch.nan_to_num(audio_data, nan=-1.5)
             return audio_data, processor.sampling_rate
         return audio_data, sample_rate
 
     try:
+        # 假设 AudioReader 和 cpu 是您代码中已定义的组件
         audio_reader = AudioReader(audio_path, ctx=cpu(0), sample_rate=sample_rate)
         audio_data = torch.from_numpy(audio_reader._array)
         audio_sample_rate = audio_reader.sample_rate
@@ -528,10 +532,18 @@ def process_audio(audio_path, processor=None, sample_rate=16000, duration=10, s=
         audio_sample_rate = sample_rate
 
     if processor is not None:
-        audio_data = processor(audio_data, sampling_rate=audio_sample_rate, return_tensors='pt')['input_features']
-        if torch.isnan(audio_data).any():
-            audio_data = torch.nan_to_num(audio_data, nan=-1.5)
-        audio_sample_rate = processor.sampling_rate
+            # 1. 使用 processor 处理音频，此时它很可能输出 float32
+            audio_data = processor(audio_data, sampling_rate=audio_sample_rate, return_tensors='pt')['input_features']
+            
+            # 2. 在处理之后，将输出的数据类型转换为半精度 half (float16)
+            audio_data = audio_data.half()
+            
+            if torch.isnan(audio_data).any():
+                # 注意：nan_to_num 可能会将类型转回 float32，我们需要再次确认
+                audio_data = torch.nan_to_num(audio_data, nan=-1.5)
+                audio_data = audio_data.half() # 确保类型正确
+
+            audio_sample_rate = processor.sampling_rate
 
     return audio_data, audio_sample_rate
 

@@ -7,7 +7,7 @@ from transformers import BertTokenizer
 
 # 设置环境变量
 os.environ['TRANSFORMERS_OFFLINE'] = '1'
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 
 class EmotionAnalyzer:
     def __init__(self):
@@ -44,8 +44,13 @@ class EmotionAnalyzer:
             video_tensor = self.processor['video'](video_file)
             
             # 根据modal类型决定是否处理音频
+            audio_text = ""
             if modal_type == 'video_audio' or modal_type == 'audio':
                 audio = self.processor['audio'](video_file)[0]
+                
+                # 获取音频转录文本
+                if hasattr(self.model.get_audio_tower(), 'transcribe_audio'):
+                    audio_text = self.model.get_audio_tower().transcribe_audio(audio)
             else:
                 audio = None
             
@@ -62,19 +67,20 @@ class EmotionAnalyzer:
                 audio=audio
             )
             
-            return output
+            return output, audio_text
             
         except Exception as e:
-            return f"分析过程中出现错误: {str(e)}"
+            return f"分析过程中出现错误: {str(e)}", ""
 
 # 创建分析器实例
 analyzer = EmotionAnalyzer()
 
 def analyze_video(video_file, modal_type):
     if video_file is None:
-        return "请上传视频文件"
+        return "请上传视频文件", ""
     
-    return analyzer.analyze_emotion(video_file, modal_type)
+    emotion_result, audio_text = analyzer.analyze_emotion(video_file, modal_type)
+    return emotion_result, audio_text
 
 # 创建Gradio界面
 with gr.Blocks(title="视频情感分析 Demo") as demo:
@@ -101,11 +107,19 @@ with gr.Blocks(title="视频情感分析 Demo") as demo:
             analyze_btn = gr.Button("开始分析", variant="primary")
             
         with gr.Column(scale=1):
-            # 结果显示
+            # 音频转录结果显示
+            audio_text_output = gr.Textbox(
+                label="音频转录文本",
+                lines=5,
+                max_lines=8,
+                placeholder="当选择包含音频的模态时，这里将显示音频转录的文本内容"
+            )
+            
+            # 情感分析结果显示
             result_output = gr.Textbox(
-                label="分析结果",
-                lines=15,
-                max_lines=20
+                label="情感分析结果",
+                lines=12,
+                max_lines=15
             )
     
     # 示例区域
@@ -118,17 +132,18 @@ with gr.Blocks(title="视频情感分析 Demo") as demo:
        - `audio`: 仅分析音频
     3. **开始分析**: 点击分析按钮获取结果
     
-    **注意**: 首次使用时模型加载可能需要一些时间，请耐心等待。
+    **注意**: 
+    - 首次使用时模型加载可能需要一些时间，请耐心等待
+    - 当选择包含音频的模态时，系统会自动转录音频内容并显示在上方文本框中
     """)
     
     analyze_btn.click(
         fn=analyze_video,
         inputs=[video_input, modal_select],
-        outputs=result_output
+        outputs=[result_output, audio_text_output]
     )
 
 if __name__ == "__main__":
-    
     demo.launch(
         server_name="0.0.0.0",  # 允许外部访问
         server_port=7860,       # 端口号

@@ -34,6 +34,11 @@ def main():
     # 根据modal类型决定是否处理音频
     if args.modal == 'video_audio' or args.modal == 'audio':
         audio = processor['audio'](args.video_path)[0]
+        
+        # 如果需要音频文本，可以这样获取
+        if hasattr(model.get_audio_tower(), 'transcribe_audio'):
+            audio_text = model.get_audio_tower().transcribe_audio(audio)
+            print(f"音频转录: {audio_text}")
     else:
         audio = None
 

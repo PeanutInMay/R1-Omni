@@ -179,23 +179,53 @@ class WhisperAudioTower(nn.Module):
         self.is_loaded = False
         self.audio_tower_name = audio_tower
         self.select_layer = args.mm_vision_select_layer
-       
+        
         if not delay_load:
             self.load_model()
         elif getattr(args, "unfreeze_mm_audio_tower", False):
-            # TODO: better detector is needed.
             print(f"The checkpoint seems to contain `audio_tower` weights: `unfreeze_mm_audio_tower`: True.")
             self.load_model()
         else:
             self.cfg_only = WhisperConfig.from_pretrained(self.audio_tower_name)
+    
     def load_model(self, device_map=None):
         if self.is_loaded:
             print("{} is already loaded, `load_model` called again, skipping.".format(self.audio_tower_name))
             return
+        
+        from transformers import WhisperProcessor, WhisperForConditionalGeneration
+        
         self.audio_processor = WhisperFeatureExtractor.from_pretrained(self.audio_tower_name)
+        
+        # 加载完整的 Whisper 模型用于转录
+        self.whisper_model = WhisperForConditionalGeneration.from_pretrained(self.audio_tower_name)
+        self.whisper_processor = WhisperProcessor.from_pretrained(self.audio_tower_name)
+        
+        # 原有的音频塔（用于特征提取）
         self.audio_tower = WhisperForAudioClassification.from_pretrained(self.audio_tower_name)
         self.audio_tower.requires_grad_(False)
+        self.whisper_model.requires_grad_(False)
+        
         self.is_loaded = True
+    
+    def transcribe_audio(self, audio_features):
+        """
+        将音频特征转录为文本
+        """
+        if not hasattr(self, 'whisper_model'):
+            raise RuntimeError("Whisper model not loaded. Call load_model() first.")
+        
+        with torch.no_grad():
+            predicted_ids = self.whisper_model.generate(
+                audio_features.to(self.device),
+                max_length=448,
+                num_beams=1,
+                do_sample=False
+            )
+        
+        transcription = self.whisper_processor.batch_decode(predicted_ids, skip_special_tokens=True)[0]
+        return transcription
+    
     def feature_select(self, audio_forward_outs):
         audio_features = audio_forward_outs.hidden_states[self.select_layer]
         return audio_features
