@@ -20,14 +20,14 @@ class EmotionAnalyzer:
     def load_model(self):
         if not self.model_loaded:
             # 初始化BERT分词器
-            bert_model = "/home/sxjiang/model/bert-base-uncased"
+            bert_model = "/home/zhzhu/model/bert-base-uncased"
             self.bert_tokenizer = BertTokenizer.from_pretrained(bert_model)
             
             # 禁用Torch初始化
             disable_torch_init()
             
             # 初始化模型、处理器和分词器
-            model_path = "/home/sxjiang/model/R1-Omni-0.5B"
+            model_path = "/home/zhzhu/model/R1-Omni-0.5B"
             self.model, self.processor, self.tokenizer = model_init(model_path)
             self.model_loaded = True
     

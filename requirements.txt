@@ -234,7 +234,6 @@ pytz==2025.1
 PyYAML==6.0.2
 pyzmq==26.2.1
 qwen-vl-utils==0.0.10
--e git+https://github.com/PeanutInMay/R1-Omni.git@c69621099af9b523d29396cd2d046d68969d827b#egg=r1_v&subdirectory=src/r1-v
 ray==2.42.1
 referencing==0.36.2
 regex==2024.11.6
